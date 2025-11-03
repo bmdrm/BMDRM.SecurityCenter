@@ -29,7 +29,7 @@ function LoginInner() {
       }
       
       // Force a hard redirect to dashboard instead of using router.replace
-      const next = params.get("next") || "/";
+      const next = params.get("next") || "/alerts";
       window.location.href = next;
     } catch (err: any) {
       setError(err?.message || "Login failed");
