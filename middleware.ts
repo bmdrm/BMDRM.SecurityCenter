@@ -10,13 +10,14 @@ export function middleware(req: NextRequest) {
     "/favicon.ico",
     "/api/login",
     "/api/logout",
+    "/api/session",
   ];
   if (publicPaths.some((p) => pathname.startsWith(p))) {
     const token = req.cookies.get("auth_token")?.value;
     // If already authenticated and trying to visit login, bounce to home (or next param)
     if (pathname === "/login" && token) {
       const url = req.nextUrl.clone();
-      const next = url.searchParams.get("next") || "/";
+      const next = url.searchParams.get("next") || "/alerts";
       url.pathname = next;
       url.search = "";
       return NextResponse.redirect(url);

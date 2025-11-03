@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   console.log("[LOGIN] API route called");
@@ -66,15 +65,22 @@ export async function POST(req: Request) {
         { status: 502 }
       );
     }
+
+    console.log("[LOGIN] Setting auth cookie with token");
+
     // Support Promise API for cookies in latest Next.js
     const response = NextResponse.json({ success: true });
+
+    // Cookie settings optimized for both dev and production
     response.cookies.set("auth_token", token, {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 7, // 7 days
     });
+
+    console.log("[LOGIN] Auth cookie set successfully");
     return response;
   } catch (err) {
     console.error("[LOGIN] Error: ", err && (err as Error).message);

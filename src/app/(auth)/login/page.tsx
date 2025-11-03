@@ -3,14 +3,25 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 function LoginInner() {
   const router = useRouter();
   const params = useSearchParams();
+  const { login, isAuthenticated } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated === true) {
+      const next = params.get("next") || "/alerts";
+      console.log("[LOGIN PAGE] Already authenticated, redirecting to:", next);
+      router.replace(next);
+    }
+  }, [isAuthenticated, router, params]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -18,22 +29,12 @@ function LoginInner() {
     setError(null);
     console.log("[LOGIN PAGE] Submitting login form", { email });
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      console.log("[LOGIN PAGE] Login response status:", res.status);
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        console.log("[LOGIN PAGE] Login error:", data);
-        throw new Error(data?.error || "Login failed");
-      }
+      await login(email, password);
       console.log("[LOGIN PAGE] Login successful, redirecting...");
-      // Force a hard redirect to dashboard instead of using router.replace
-      const next = "/alerts";
-      window.location.href = next;
+      const next = params.get("next") || "/alerts";
+      router.replace(next);
     } catch (err: any) {
+      console.log("[LOGIN PAGE] Login error:", err);
       setError(err?.message || "Login failed");
     } finally {
       setLoading(false);

@@ -51,10 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json().catch(() => ({}));
       console.log("[AUTH] Login response data:", data);
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error((data as any)?.error || "Login failed");
       }
+      // Refresh authentication state after successful login
       await refresh();
+      console.log("[AUTH] Login successful, state refreshed");
     },
     [refresh]
   );
