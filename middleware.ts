@@ -3,6 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get("auth_token")?.value;
+  const allCookies = req.cookies.getAll();
+
+  // Temporary debug logging for production
+  console.log("[MIDDLEWARE]", {
+    pathname,
+    hasToken: !!token,
+    tokenLength: token?.length || 0,
+    allCookies: allCookies.map((c) => c.name),
+    url: req.url,
+  });
 
   // Allow public paths
   const publicPaths = [

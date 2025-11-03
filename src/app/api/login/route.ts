@@ -60,15 +60,29 @@ export async function POST(req: Request) {
       );
     }
 
+    console.log("[LOGIN] Setting cookie, token length:", token.length);
+    console.log("[LOGIN] NODE_ENV:", process.env.NODE_ENV);
+
     // Set authentication cookie
     const cookieStore = await cookies();
-    cookieStore.set("auth_token", token, {
+
+    // Only use secure flag if actually on HTTPS
+    // Check if request is from HTTPS
+    const isHttps =
+      req.headers.get("x-forwarded-proto") === "https" ||
+      req.url.startsWith("https://");
+
+    const cookieOptions = {
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: "lax" as const,
       path: "/",
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps, // Only secure if HTTPS
       maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
+    };
+
+    console.log("[LOGIN] Cookie options:", cookieOptions);
+    cookieStore.set("auth_token", token, cookieOptions);
+    console.log("[LOGIN] Cookie set successfully");
 
     return NextResponse.json({ success: true });
   } catch (err) {
