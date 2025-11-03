@@ -31,8 +31,8 @@ function LoginInner() {
       }
       console.log("[LOGIN PAGE] Login successful, redirecting...");
       // Force a hard redirect to dashboard instead of using router.replace
-      // const next = params.get("next") || "/alerts";
-      // window.location.href = next;
+      const next = "/alerts";
+      window.location.href = next;
     } catch (err: any) {
       setError(err?.message || "Login failed");
     } finally {
