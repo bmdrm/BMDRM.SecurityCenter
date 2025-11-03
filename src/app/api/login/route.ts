@@ -72,13 +72,16 @@ export async function POST(req: Request) {
     const response = NextResponse.json({ success: true });
 
     // Cookie settings optimized for both dev and production
-    response.cookies.set("auth_token", token, {
+    const cookieOptions = {
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: "lax" as const,
       path: "/",
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
+    };
+    
+    console.log("[LOGIN] Cookie options:", cookieOptions);
+    response.cookies.set("auth_token", token, cookieOptions);
 
     console.log("[LOGIN] Auth cookie set successfully");
     return response;

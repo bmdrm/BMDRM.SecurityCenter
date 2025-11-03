@@ -2,6 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const token = req.cookies.get("auth_token")?.value;
+  
+  console.log("[MIDDLEWARE]", {
+    pathname,
+    hasToken: !!token,
+    cookies: req.cookies.getAll().map(c => c.name),
+  });
 
   // Allow public paths
   const publicPaths = [
@@ -11,11 +18,12 @@ export function middleware(req: NextRequest) {
     "/api/login",
     "/api/logout",
     "/api/session",
+    "/api/debug",
   ];
   if (publicPaths.some((p) => pathname.startsWith(p))) {
-    const token = req.cookies.get("auth_token")?.value;
     // If already authenticated and trying to visit login, bounce to home (or next param)
     if (pathname === "/login" && token) {
+      console.log("[MIDDLEWARE] Redirecting authenticated user from login to dashboard");
       const url = req.nextUrl.clone();
       const next = url.searchParams.get("next") || "/alerts";
       url.pathname = next;
@@ -26,14 +34,15 @@ export function middleware(req: NextRequest) {
   }
 
   // Protect all other routes (dashboard routes)
-  const token = req.cookies.get("auth_token")?.value;
   if (!token) {
+    console.log("[MIDDLEWARE] No token, redirecting to login");
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
 
+  console.log("[MIDDLEWARE] Token found, allowing access");
   return NextResponse.next();
 }
 

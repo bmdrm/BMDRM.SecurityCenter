@@ -6,9 +6,11 @@ export async function GET() {
   const allCookies = cookieStore.getAll();
   const token = cookieStore.get("auth_token")?.value;
   
-  console.log("[SESSION] All cookies:", allCookies.map(c => c.name));
-  console.log("[SESSION] Auth token exists:", !!token);
-  console.log("[SESSION] Token length:", token?.length || 0);
-  
-  return NextResponse.json({ authenticated: !!token });
+  return NextResponse.json({
+    hasToken: !!token,
+    tokenLength: token?.length || 0,
+    allCookieNames: allCookies.map(c => c.name),
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+  });
 }

@@ -27,14 +27,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/session", { cache: "no-store" });
+      console.log("[AUTH] Refreshing session...");
+      const res = await fetch("/api/session", { 
+        cache: "no-store",
+        credentials: "include" // Ensure cookies are sent
+      });
+      console.log("[AUTH] Session response status:", res.status);
       if (!res.ok) {
+        console.log("[AUTH] Session check failed");
         setIsAuthenticated(false);
         return;
       }
       const data = (await res.json()) as { authenticated: boolean };
+      console.log("[AUTH] Session data:", data);
       setIsAuthenticated(!!data?.authenticated);
-    } catch {
+    } catch (err) {
+      console.error("[AUTH] Session check error:", err);
       setIsAuthenticated(false);
     }
   }, []);
@@ -46,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include", // Ensure cookies are sent/received
       });
       console.log("[AUTH] Login response status:", res.status);
       const data = await res.json().catch(() => ({}));
@@ -54,8 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error((data as any)?.error || "Login failed");
       }
       // Refresh authentication state after successful login
+      console.log("[AUTH] Login successful, refreshing state...");
       await refresh();
-      console.log("[AUTH] Login successful, state refreshed");
+      console.log("[AUTH] State refreshed, isAuthenticated should be updated");
     },
     [refresh]
   );
