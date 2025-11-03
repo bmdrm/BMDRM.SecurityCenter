@@ -1,27 +1,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-// --- recharts imports ---
 import {
   Bar,
   BarChart,
   Cell,
   Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   XAxis,
   YAxis,
+  CartesianGrid,
+  Area,
+  AreaChart,
 } from "recharts";
 import {
   ChartBarIcon,
   ClipboardDocumentListIcon,
   ExclamationTriangleIcon,
   ShieldCheckIcon,
+  GlobeAltIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 import { useEffect, useMemo, useState } from "react";
-
+import { Chart } from "react-google-charts";
 import Link from "next/link";
 
 type Decision = {
@@ -30,14 +36,14 @@ type Decision = {
 };
 
 const pieColors = [
-  "#0070f3",
-  "#f59e42",
-  "#16a34a",
+  "#3b82f6",
+  "#f59e0b",
+  "#10b981",
   "#ef4444",
-  "#f43f5e",
   "#8b5cf6",
-  "#6ee7b7",
-  "#fdba74",
+  "#ec4899",
+  "#6366f1",
+  "#14b8a6",
 ];
 function useDecisionStats() {
   const [decisions, setDecisions] = useState<Decision[]>([]);
@@ -189,36 +195,122 @@ export default function Dashboard() {
     .slice(0, 6);
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       {statsError && (
-        <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {statsError}
         </div>
       )}
       {alertsError && (
-        <div className="mb-4 rounded border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+        <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
           {alertsError}
         </div>
       )}
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
           Security Dashboard
         </h1>
-        <p className="mt-2 text-sm md:text-base text-gray-600">
-          Monitor and manage security events across your infrastructure
+        <p className="text-base text-gray-600">
+          Real-time monitoring and analytics for your security infrastructure
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow flex flex-col items-center py-5">
-          <h3 className="font-semibold mb-3 text-gray-800 text-center">
-            Decisions by Type
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+        {cards.map((stat) => (
+          <div
+            key={stat.name}
+            className="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100 hover:shadow-xl transition-shadow duration-200">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-500 mb-1">
+                    {stat.name}
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stat.value}
+                  </p>
+                  {stat.change && (
+                    <p
+                      className={`mt-2 text-sm font-semibold ${
+                        stat.changeType === "increase"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}>
+                      {stat.change}
+                    </p>
+                  )}
+                </div>
+                <div className="shrink-0">
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <stat.icon
+                      className="h-8 w-8 text-blue-600"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* World Map - Full Width */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mb-8">
+        <div className="flex items-center mb-6">
+          <GlobeAltIcon className="h-6 w-6 text-blue-600 mr-2" />
+          <h3 className="text-xl font-semibold text-gray-900">
+            Global Threat Map
           </h3>
-          <ResponsiveContainer
+        </div>
+        <div className="h-[500px]">
+          <Chart
+            chartType="GeoChart"
             width="100%"
-            height={220}
-            minWidth={200}
-            minHeight={180}>
+            height="100%"
+            data={[
+              ["Country", "Threats"],
+              ...Array.from(
+                decisions.reduce((m, d) => {
+                  const iso = d?.metadata?.isoCode;
+                  if (iso && iso !== "?") {
+                    m.set(iso, (m.get(iso) || 0) + 1);
+                  }
+                  return m;
+                }, new Map()),
+                ([iso, value]) => [iso, value]
+              ),
+            ]}
+            options={{
+              colorAxis: {
+                colors: ["#dbeafe", "#93c5fd", "#3b82f6", "#1e40af", "#1e3a8a"],
+                minValue: 0,
+              },
+              backgroundColor: "#f9fafb",
+              datalessRegionColor: "#e5e7eb",
+              defaultColor: "#f3f4f6",
+              legend: "none",
+              tooltip: {
+                textStyle: { fontSize: 12 },
+                trigger: "focus",
+              },
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Decision Types - Pie Chart */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center mb-6">
+            <ChartBarIcon className="h-6 w-6 text-blue-600 mr-2" />
+            <h3 className="text-xl font-semibold text-gray-900">
+              Decisions by Type
+            </h3>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
                 data={typeCounts}
@@ -226,10 +318,11 @@ export default function Dashboard() {
                 nameKey="type"
                 cx="50%"
                 cy="50%"
-                outerRadius={80}
+                outerRadius={100}
                 label={({ type, percent }) =>
                   `${type} (${Math.round(Number(percent ?? 0) * 100)}%)`
-                }>
+                }
+                labelLine={true}>
                 {typeCounts.map((entry, i) => (
                   <Cell
                     key={entry.type}
@@ -238,26 +331,41 @@ export default function Dashboard() {
                 ))}
               </Pie>
               <RechartsTooltip />
-              <Legend verticalAlign="bottom" height={36} />
+              <Legend
+                verticalAlign="bottom"
+                height={40}
+                wrapperStyle={{ paddingTop: "20px" }}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="bg-white rounded-lg shadow flex flex-col items-center py-5">
-          <h3 className="font-semibold mb-3 text-gray-800 text-center">
-            Top Countries
-          </h3>
-          <ResponsiveContainer
-            width="100%"
-            height={220}
-            minWidth={200}
-            minHeight={180}>
+
+        {/* Top Countries - Bar Chart */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center mb-6">
+            <GlobeAltIcon className="h-6 w-6 text-blue-600 mr-2" />
+            <h3 className="text-xl font-semibold text-gray-900">
+              Top Countries (Bar)
+            </h3>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
             <BarChart
               data={countryCounts}
-              layout="vertical"
-              margin={{ top: 20, right: 20, left: 15, bottom: 10 }}>
-              <XAxis type="number" hide domain={[0, "dataMax"]} />
-              <YAxis type="category" dataKey="country" width={48} />
-              <Bar dataKey="value">
+              margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis
+                dataKey="country"
+                tick={{ fill: "#6b7280", fontSize: 12 }}
+              />
+              <YAxis tick={{ fill: "#6b7280", fontSize: 12 }} />
+              <RechartsTooltip
+                contentStyle={{
+                  backgroundColor: "#fff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                }}
+              />
+              <Bar dataKey="value" radius={[8, 8, 0, 0]}>
                 {countryCounts.map((entry, i) => (
                   <Cell
                     key={entry.country}
@@ -265,93 +373,58 @@ export default function Dashboard() {
                   />
                 ))}
               </Bar>
-              <RechartsTooltip />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Stats Grid (from /api/statistics) */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6 md:mb-8">
-        {(cards.length ? cards : []).map((stat) => (
-          <div
-            key={stat.name}
-            className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-4 md:p-5">
+      {/* Bottom Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+        {/* Recent Alerts - Takes 2 columns */}
+        <div className="lg:col-span-2 bg-white shadow-lg rounded-xl border border-gray-100">
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <stat.icon
-                    className="h-5 w-5 md:h-6 md:w-6 text-gray-400"
-                    aria-hidden="true"
-                  />
-                </div>
-                <div className="ml-3 md:ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-xs md:text-sm font-medium text-gray-500 truncate">
-                      {stat.name}
-                    </dt>
-                    <dd className="flex items-baseline">
-                      <div className="text-lg md:text-2xl font-semibold text-gray-900">
-                        {stat.value}
-                      </div>
-                      {stat.change && (
-                        <div
-                          className={`ml-1 md:ml-2 flex items-baseline text-xs md:text-sm font-semibold ${
-                            stat.changeType === "increase"
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}>
-                          {stat.change}
-                        </div>
-                      )}
-                    </dd>
-                  </dl>
-                </div>
+                <ClockIcon className="h-6 w-6 text-blue-600 mr-2" />
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Recent Alerts
+                </h3>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Recent Alerts (from /api/alerts?limit=...) */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-4 md:py-5 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Recent Alerts
-              </h3>
               <Link
                 href="/alerts"
-                className="text-sm font-medium text-blue-600 hover:text-blue-500">
-                View all
+                className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
+                View all →
               </Link>
             </div>
+          </div>
+          <div className="px-6 py-4">
             <div className="flow-root">
-              <ul className="-my-5 divide-y divide-gray-200">
-                {alerts.map((alert: any) => (
-                  <li key={alert.id} className="py-4">
+              <ul className="divide-y divide-gray-100">
+                {alerts.slice(0, 8).map((alert: any) => (
+                  <li
+                    key={alert.id}
+                    className="py-4 hover:bg-gray-50 px-2 rounded-lg transition-colors">
                     <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         <div
-                          className={`h-2 w-2 rounded-full ${
+                          className={`h-3 w-3 rounded-full ${
                             (alert?.severity || "High") === "Critical"
-                              ? "bg-red-400"
+                              ? "bg-red-500 animate-pulse"
                               : (alert?.severity || "High") === "High"
-                              ? "bg-orange-400"
-                              : "bg-yellow-400"
+                              ? "bg-orange-500"
+                              : "bg-yellow-500"
                           }`}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
                           {alert?.scenario || "Alert"}
                         </p>
-                        <p className="text-sm text-gray-500 truncate">
-                          {alert?.decisions?.[0]?.value || "-"}
+                        <p className="text-sm text-gray-600 truncate">
+                          IP: {alert?.decisions?.[0]?.value || "-"}
                         </p>
                       </div>
-                      <div className="flex-shrink-0 text-sm text-gray-500">
+                      <div className="shrink-0 text-sm text-gray-500">
                         {new Date(
                           alert?.stop_at || alert?.start_at || now
                         ).toLocaleString()}
@@ -360,15 +433,12 @@ export default function Dashboard() {
                   </li>
                 ))}
               </ul>
-              {!alertsFromStats && (
-                <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-gray-500">
-                    Showing {alerts.length} alerts
-                  </p>
+              {!alertsFromStats && alerts.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center">
                   <button
                     onClick={() => setAlertLimit((l) => l + 10)}
-                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    Load more
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    Load more alerts
                   </button>
                 </div>
               )}
@@ -376,29 +446,36 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-4 md:py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+        {/* Quick Actions
+        <div className="bg-white shadow-lg rounded-xl border border-gray-100">
+          <div className="px-6 py-5 border-b border-gray-100">
+            <h3 className="text-xl font-semibold text-gray-900">
               Quick Actions
             </h3>
-            <div className="space-y-2 md:space-y-3">
+          </div>
+          <div className="px-6 py-5">
+            <div className="space-y-3">
               <Link
                 href="/alerts"
-                className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
                 View All Alerts
               </Link>
               <Link
                 href="/decisions"
-                className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                 Manage Decisions
               </Link>
-              <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                 Export Report
               </button>
+              <Link
+                href="/settings"
+                className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                Settings
+              </Link>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

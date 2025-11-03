@@ -20,7 +20,8 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: ChartBarIcon },
   { name: "Alerts", href: "/alerts", icon: ExclamationTriangleIcon },
   { name: "Decisions", href: "/decisions", icon: ClipboardDocumentListIcon },
-  { name: "Settings", href: "/settings", icon: Cog6ToothIcon },
+  { name: "Allowlist", href: "/allowlist", icon: ShieldCheckIcon },
+  // { name: "Settings", href: "/settings", icon: Cog6ToothIcon },
 ];
 
 export function Navigation() {
